@@ -14,7 +14,9 @@ from io import StringIO
 import pickle
 import streamlit as st
 from collections.abc import Iterable   # import directly from collections for Python < 3.3
-
+nltk.download('stopwords')
+nltk.download('wordnet')
+nltk.download('omw-1.4')
 
 
 def convertStringToDataFrame(str):
