@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -27,6 +26,8 @@ def convertStringToDataFrame(str):
     return newData
 
 
+
+
 # Функция для очистки пунктуации
 def remove_punc(text):
     if isinstance(text, Iterable):
@@ -36,52 +37,44 @@ def remove_punc(text):
         text = str(text).replace('\n', ' ')
         clean = "".join([x.lower() for x in text if x not in punc_set])
         return clean
-
-
 # Фунцкция для токенизации
 def tokenize(text):
     tokens = re.split("\W+", text)
     return tokens
-
-
 # Функция для очистки датасета от необязательных слов
 def remove_stopwords(tokenized_words):
     Ligit_text = [word for word in tokenized_words if word not in stopwords]
     return Ligit_text
-
-
 # Функция для лемматизации датасета
 def lemmatizing(tokenized_text):
     lemma = [wnl.lemmatize(word) for word in tokenized_text]
     return lemma
 
+
 @st.cache(suppress_st_warning=True)
 def prepareData(data):
     data_out = data.copy()
     data_out['no_punc'] = data_out['review'].apply(lambda z: remove_punc(z))
-
     # Применяем функцию токенизации
     data_out['tokenized_Data'] = data_out['no_punc'].apply(lambda z: tokenize(z))
-
     # Очищаем датасет от необязательных слов
     data_out["no_stop"] = data_out["tokenized_Data"].apply(lambda z: remove_stopwords(z))
-
     # Применяем функцию лемматизации
     data_out['lemmatized'] = data_out['no_stop'].apply(lambda z: lemmatizing(z))
-
     # Этот шаг выполняется здесь, потому что столбец «lemmatized» представляет собой список токенизированных слов, и когда мы применяем векторизацию
     # методы, такие как count vectorizer или TFIDF, требуют ввода строки. Следовательно, преобразуем все токенизированные слова в строку
     data_out['lemmatized'] = [" ".join(review) for review in data_out['lemmatized'].values]
-
     data_out.head()
     return data_out
+
+
+
 
 # Отрисовка ROC-кривой
 def draw_roc_curve(y_true, y_score, ax, pos_label=1, average='micro'):
     fpr, tpr, thresholds = roc_curve(y_true, y_score,
                                      pos_label=pos_label)
     roc_auc_value = roc_auc_score(y_true, y_score, average=average)
-    #plt.figure()
     lw = 2
     ax.plot(fpr, tpr, color='darkorange',
              lw=lw, label='ROC curve (area = %0.2f)' % roc_auc_value)
@@ -121,17 +114,23 @@ def print_models(models_select, x_test, y_test):
                               display_labels=['0', '1'],
                               cmap=plt.cm.Blues, normalize='true')
         fig.suptitle(model_name)
-        st.pyplot(fig)
-        st.write(scores)
+        graphCol.pyplot(fig)
+        graphCol.write(scores)
 
 @st.cache(suppress_st_warning=True)
 def load_data():
     data = pd.read_csv('movie_data.csv', nrows = 2000)
     return data
+
 def clear_text():
     st.session_state["text"] = ""
 
+@st.cache(suppress_st_warning=True, allow_output_mutation= True)
+def load_model(model):
+    return pickle.load(open(model, 'rb'))
+
 if __name__ == '__main__':
+
     # Убираем пунктуацию со всего датасета
     punc_set = string.punctuation
 
@@ -141,23 +140,35 @@ if __name__ == '__main__':
     # Импорт «WordNetLemmatizer» в качестве функции лемматизации для поиска леммы слов
     wnl = nltk.wordnet.WordNetLemmatizer()
 
-    st.header('Классификация отзывов на фильмы')
+    st.title('Классификация отзывов на фильмы')
 
     # загружаем данные
-    data_load_state = st.text('Загрузка данных...')
-    tfidf_vect = pickle.load(open("tfidf_vect.pickle", 'rb'))
-    best_model = pickle.load(open("best_model.sav", 'rb'))
-    ber_nb_model = pickle.load(open("Ber_NB_tf_best.sav", 'rb'))
-    lg_model = pickle.load(open("Lg_reg_tf.sav", 'rb'))
-   # rf_model = pickle.load(open("RF_tf.sav", 'rb'))
-    gb_model = pickle.load(open("GB_tf.sav", 'rb'))
+    data_load_state = st.text('Загрузка...')
+    bar = st.progress(0.0)
+    tfidf_vect = load_model("tfidf_vect.pickle")
+    bar.progress(0.125)
+    best_model = load_model("best_model.sav")
+    bar.progress(0.25)
+    ber_nb_model = load_model("Ber_NB_tf_best.sav")
+    bar.progress(0.375)
+    lg_model = load_model("Lg_reg_tf.sav")
+    bar.progress(0.5)
+    gb_model = load_model("GB_tf.sav")
+    bar.progress(0.625)
     data = load_data()
+    bar.progress(0.75)
     data = prepareData(data)
-    # Разделение данных на более мелкие кадры данных для обучения и тестирования
+    bar.progress(0.875)
+
+
+    # Разделение данных на более мелкие кадры данных для тестирования
     x_test = data.iloc[:, 5]
     y_test = data.iloc[:, 1]
     x_test = tfidf_vect.transform(x_test.values)
-    data_load_state.text('Данные загружены!')
+    bar.progress(1.0)
+    data_load_state.text("")
+    bar.empty()
+
 
 
     # Модели
@@ -166,27 +177,31 @@ if __name__ == '__main__':
     clas_models = {'Bernoulli Naive Bayes': ber_nb_model,
                       'Multinomial Naive Bayes': best_model,
                       'Logistic Regression': lg_model,
-       #               'Random Forest': rf_model,
                       'Gradient Boosting': gb_model}
 
-    st.sidebar.header('Модели машинного обучения')
-    models_select = st.sidebar.multiselect('Выберите модели', models_list)
+    graphCol, predictCol = st.columns([3, 1])
+    graphCol.subheader('Оценка качества моделей')
+    models_select = graphCol.multiselect('Выберите модели', models_list)
 
-    st.subheader('Оценка качества моделей')
     print_models(models_select, x_test, y_test)
 
-    txt = st.sidebar.text_area(label = "Отзыв для классификации", key="text", height=500)
-    if st.sidebar.button("Классифицировать"):
-        review = convertStringToDataFrame(txt)
-        data_text = prepareData(review)
-        data_text = tfidf_vect.transform(data_text['lemmatized'].values)
-        result = best_model.predict(data_text)
-        if result[0] == 1:
-            st.sidebar.success("Положительный отзыв")
+
+    txt = predictCol.text_area(label = "Отзыв для классификации", key="text", height=300)
+    predictCol.button("Очистить", on_click=clear_text)
+    if predictCol.button("Классифицировать"):
+        if len(txt) != 0:
+            review = convertStringToDataFrame(txt)
+            data_text = prepareData(review)
+            data_text = tfidf_vect.transform(data_text['lemmatized'].values)
+            result = best_model.predict(data_text)
+            if result[0] == 1:
+                predictCol.success("Положительный отзыв")
+            else:
+                predictCol.error("Отрицательный отзыв")
         else:
-            st.sidebar.error("Отрицательный отзыв")
-    st.sidebar.button("Очистить", on_click=clear_text)
-    #st.write(txt)
+            predictCol.error("Введите отзыв")
+
+
 
 
 
