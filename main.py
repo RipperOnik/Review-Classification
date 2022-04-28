@@ -87,7 +87,7 @@ def draw_roc_curve(y_true, y_score, ax, pos_label=1, average='micro'):
     ax.legend(loc="lower right")
 
 
-@st.cache(suppress_st_warning=True)
+# @st.cache(suppress_st_warning=True)
 def print_models(models_select, x_test, y_test):
     current_models_list = []
     scores = {}
@@ -129,78 +129,77 @@ def clear_text():
 def load_model(model):
     return pickle.load(open(model, 'rb'))
 
+
+
+# Убираем пунктуацию со всего датасета
+punc_set = string.punctuation
+
+# Получаем список необязательных слов (местоимений, артиклей)
+stopwords = nltk.corpus.stopwords.words('english')
+
+# Импорт «WordNetLemmatizer» в качестве функции лемматизации для поиска леммы слов
+wnl = nltk.wordnet.WordNetLemmatizer()
+
+st.title('Классификация отзывов на фильмы')
+
+# загружаем данные
+data_load_state = st.text('Загрузка...')
+bar = st.progress(0.0)
+tfidf_vect = load_model("tfidf_vect.pickle")
+bar.progress(0.125)
+best_model = load_model("best_model.sav")
+bar.progress(0.25)
+ber_nb_model = load_model("Ber_NB_tf_best.sav")
+bar.progress(0.375)
+lg_model = load_model("Lg_reg_tf.sav")
+bar.progress(0.5)
+gb_model = load_model("GB_tf.sav")
+bar.progress(0.625)
+data = load_data()
+bar.progress(0.75)
+data = prepareData(data)
+bar.progress(0.875)
+
+
+# Разделение данных на более мелкие кадры данных для тестирования
+x_test = data.iloc[:, 5]
+y_test = data.iloc[:, 1]
+x_test = tfidf_vect.transform(x_test.values)
+bar.progress(1.0)
+data_load_state.text("")
+bar.empty()
+
+
+
+# Модели
+models_list = ['Bernoulli Naive Bayes', 'Multinomial Naive Bayes', 'Logistic Regression', 'Gradient Boosting']
+
+clas_models = {'Bernoulli Naive Bayes': ber_nb_model,
+                  'Multinomial Naive Bayes': best_model,
+                  'Logistic Regression': lg_model,
+                  'Gradient Boosting': gb_model}
+
 graphCol, predictCol = st.columns([3, 1])
-if __name__ == '__main__':
+graphCol.subheader('Оценка качества моделей')
+models_select = graphCol.multiselect('Выберите модели', models_list)
 
-    # Убираем пунктуацию со всего датасета
-    punc_set = string.punctuation
+print_models(models_select, x_test, y_test)
 
-    # Получаем список необязательных слов (местоимений, артиклей)
-    stopwords = nltk.corpus.stopwords.words('english')
-
-    # Импорт «WordNetLemmatizer» в качестве функции лемматизации для поиска леммы слов
-    wnl = nltk.wordnet.WordNetLemmatizer()
-
-    st.title('Классификация отзывов на фильмы')
-
-    # загружаем данные
-    data_load_state = st.text('Загрузка...')
-    bar = st.progress(0.0)
-    tfidf_vect = load_model("tfidf_vect.pickle")
-    bar.progress(0.125)
-    best_model = load_model("best_model.sav")
-    bar.progress(0.25)
-    ber_nb_model = load_model("Ber_NB_tf_best.sav")
-    bar.progress(0.375)
-    lg_model = load_model("Lg_reg_tf.sav")
-    bar.progress(0.5)
-    gb_model = load_model("GB_tf.sav")
-    bar.progress(0.625)
-    data = load_data()
-    bar.progress(0.75)
-    data = prepareData(data)
-    bar.progress(0.875)
-
-
-    # Разделение данных на более мелкие кадры данных для тестирования
-    x_test = data.iloc[:, 5]
-    y_test = data.iloc[:, 1]
-    x_test = tfidf_vect.transform(x_test.values)
-    bar.progress(1.0)
-    data_load_state.text("")
-    bar.empty()
-
-
-
-    # Модели
-    models_list = ['Bernoulli Naive Bayes', 'Multinomial Naive Bayes', 'Logistic Regression', 'Gradient Boosting']
-
-    clas_models = {'Bernoulli Naive Bayes': ber_nb_model,
-                      'Multinomial Naive Bayes': best_model,
-                      'Logistic Regression': lg_model,
-                      'Gradient Boosting': gb_model}
-
-    # graphCol, predictCol = st.columns([3, 1])
-    graphCol.subheader('Оценка качества моделей')
-    models_select = graphCol.multiselect('Выберите модели', models_list)
-
-    print_models(models_select, x_test, y_test)
-
-    predictCol.subheader("Классификация отзывов")
-    txt = predictCol.text_area(label = "Отзыв для классификации", key="text", height=300)
-    predictCol.button("Очистить", on_click=clear_text)
-    if predictCol.button("Классифицировать"):
-        if len(txt) != 0:
-            review = convertStringToDataFrame(txt)
-            data_text = prepareData(review)
-            data_text = tfidf_vect.transform(data_text['lemmatized'].values)
-            result = best_model.predict(data_text)
-            if result[0] == 1:
-                predictCol.success("Положительный отзыв")
-            else:
-                predictCol.error("Отрицательный отзыв")
+predictCol.subheader("Классификация отзывов")
+txt = predictCol.text_area(label = "Отзыв для классификации", key="text", height=300)
+predictCol.button("Очистить", on_click=clear_text)
+if predictCol.button("Классифицировать"):
+    if len(txt) != 0:
+        review = convertStringToDataFrame(txt)
+        data_text = prepareData(review)
+        data_text = tfidf_vect.transform(data_text['lemmatized'].values)
+        result = best_model.predict(data_text)
+        if result[0] == 1:
+            predictCol.success("Положительный отзыв")
         else:
-            predictCol.error("Введите отзыв")
+            predictCol.error("Отрицательный отзыв")
+    else:
+        predictCol.error("Введите отзыв")
 
 
 
