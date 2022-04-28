@@ -129,6 +129,7 @@ def clear_text():
 def load_model(model):
     return pickle.load(open(model, 'rb'))
 
+graphCol, predictCol = st.columns([3, 1])
 if __name__ == '__main__':
 
     # Убираем пунктуацию со всего датасета
@@ -179,13 +180,13 @@ if __name__ == '__main__':
                       'Logistic Regression': lg_model,
                       'Gradient Boosting': gb_model}
 
-    graphCol, predictCol = st.columns([3, 1])
+    # graphCol, predictCol = st.columns([3, 1])
     graphCol.subheader('Оценка качества моделей')
     models_select = graphCol.multiselect('Выберите модели', models_list)
 
     print_models(models_select, x_test, y_test)
 
-    # predictCol.subheader("Классификация отзывов")
+    predictCol.subheader("Классификация отзывов")
     txt = predictCol.text_area(label = "Отзыв для классификации", key="text", height=300)
     predictCol.button("Очистить", on_click=clear_text)
     if predictCol.button("Классифицировать"):
