@@ -185,7 +185,7 @@ if __name__ == '__main__':
 
     print_models(models_select, x_test, y_test)
 
-
+    # predictCol.subheader("Классификация отзывов")
     txt = predictCol.text_area(label = "Отзыв для классификации", key="text", height=300)
     predictCol.button("Очистить", on_click=clear_text)
     if predictCol.button("Классифицировать"):
