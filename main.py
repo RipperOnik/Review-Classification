@@ -146,19 +146,111 @@ def separate_data():
 
 
 
-# Убираем пунктуацию со всего датасета
+# # Убираем пунктуацию со всего датасета
+# punc_set = string.punctuation
+
+# # Получаем список необязательных слов (местоимений, артиклей)
+# stopwords = nltk.corpus.stopwords.words('english')
+
+# # Импорт «WordNetLemmatizer» в качестве функции лемматизации для поиска леммы слов
+# wnl = nltk.wordnet.WordNetLemmatizer()
+
+# st.title('Классификация отзывов на фильмы')
+
+# # загружаем данные
+# data_load_state = st.text('Загрузка...')
+# bar = st.progress(0.0)
+# tfidf_vect = load_model("tfidf_vect.pickle")
+# bar.progress(0.125)
+# best_model = load_model("best_model.sav")
+# bar.progress(0.25)
+# ber_nb_model = load_model("Ber_NB_tf_best.sav")
+# bar.progress(0.375)
+# lg_model = load_model("Lg_reg_tf.sav")
+# bar.progress(0.5)
+# gb_model = load_model("GB_tf.sav")
+# bar.progress(0.625)
+# n_rows = st.slider("Выберите количество строк в датасете", 200, 50000, 1000, 200)
+# data = load_data(n_rows)
+# bar.progress(0.75)
+# data = prepareData(data)
+# # data = readPreparedData()
+# bar.progress(0.875)
+
+
+# x_test, y_test = separate_data()
+# bar.progress(1.0)
+# data_load_state.text("")
+# bar.empty()
+
+
+
+# # Модели
+# models_list = ['Multinomial Naive Bayes', 'Bernoulli Naive Bayes', 'Logistic Regression', 'Gradient Boosting']
+
+# clas_models = {'Multinomial Naive Bayes': best_model,
+#                'Bernoulli Naive Bayes': ber_nb_model,
+#                'Logistic Regression': lg_model,
+#                'Gradient Boosting': gb_model}
+# # models = init_models()
+# st.subheader("Справочные материалы")
+# with st.expander("ROC-кривая"):
+#     st.write("""***ROC-кривая*** — график, позволяющий оценить качество бинарной классификации, отображает соотношение между долей объектов от общего количества носителей признака, верно классифицированных как несущие признак (англ. true positive rate, TPR, называемой чувствительностью алгоритма классификации), и долей объектов от общего количества объектов, не несущих признака, ошибочно классифицированных как несущие признак (англ. false positive rate).""")
+#     st.write("""Количественная интерпретация ROC даёт показатель AUC (англ. Area Under Curve, площадь под кривой) — площадь, ограниченная ROC-кривой и осью доли ложных положительных классификаций. Чем выше показатель AUC, тем качественнее классификатор, при этом значение 0,5 демонстрирует непригодность выбранного метода классификации (соответствует случайному гаданию).""")
+# with st.expander("Матрица ошибок (Confusion Matrix) и метрики"):
+#     st.write("""***Истинно позитивное предсказание (True Positive, сокр. TP)***\n
+# Вы предсказали положительный результат, и результат действительно положительный.""")
+#     st.write("""***Истинно отрицательное предсказание (True Negative, TN)***\n
+# Вы предсказали отрицательный результат, и результат действительно отрицательный.""")
+#     st.write("""***Ошибочно положительное предсказание (False Positive, FN)***\n
+# Вы предсказали положительный результат, но на самом деле это не так.""")
+#     st.write("""***Ошибочно отрицательное предсказание (False Negative, FN)***\n
+# Вы предсказали отрицательный результат, но на самом деле это не так.""")
+#     st.image("Confusion matrix.png")
+#     st.markdown(r'''Accuracy = $$ \frac{TP+TN}{TP+FP+FN+TN}$$''')
+#     st.markdown(r'''Precision = $$ \frac{TP}{TP+FP}$$''')
+#     st.markdown(r'''Recall = $$ \frac{TP}{TP+FN}$$''')
+#     st.markdown(r'''F1 score = $$ 2\frac{Recall * Precision}{Recall + Precision}$$''')
+
+
+# graphCol, predictCol = st.columns([3, 1])
+# graphCol.subheader('Оценка качества моделей')
+# models_select = graphCol.multiselect('Выберите модели', models_list)
+
+
+
+# print_models(models_select, x_test, y_test)
+
+# predictCol.subheader("Классификация отзывов")
+# radioButton = predictCol.radio("Выберите модель", models_list, 0)
+# txt = predictCol.text_area(label = "Отзыв для классификации", key="text", height=300)
+# predictCol.button("Очистить", on_click=clear_text)
+# if predictCol.button("Классифицировать"):
+#     if len(txt) != 0:
+#         review = convertStringToDataFrame(txt)
+#         data_text = prepareData(review)
+#         data_text = tfidf_vect.transform(data_text['lemmatized'].values)
+#         result = clas_models[radioButton].predict(data_text)
+#         if result[0] == 1:
+#             predictCol.success("Положительный отзыв")
+#         else:
+#             predictCol.error("Отрицательный отзыв")
+#     else:
+#         predictCol.error("Введите отзыв")
+
+# Removing punctuation from the entire dataset
 punc_set = string.punctuation
 
-# Получаем список необязательных слов (местоимений, артиклей)
+# Getting a list of stopwords (pronouns, articles)
 stopwords = nltk.corpus.stopwords.words('english')
 
-# Импорт «WordNetLemmatizer» в качестве функции лемматизации для поиска леммы слов
+# Importing "WordNetLemmatizer" as a lemmatization function to find word lemmas
 wnl = nltk.wordnet.WordNetLemmatizer()
 
-st.title('Классификация отзывов на фильмы')
+st.title('Movie Review Classification')
 
-# загружаем данные
-data_load_state = st.text('Загрузка...')
+# Loading data
+data_load_state = st.text('Loading...')
 bar = st.progress(0.0)
 tfidf_vect = load_model("tfidf_vect.pickle")
 bar.progress(0.125)
@@ -170,73 +262,62 @@ lg_model = load_model("Lg_reg_tf.sav")
 bar.progress(0.5)
 gb_model = load_model("GB_tf.sav")
 bar.progress(0.625)
-n_rows = st.slider("Выберите количество строк в датасете", 200, 50000, 1000, 200)
+n_rows = st.slider("Choose the number of rows in the dataset", 200, 50000, 1000, 200)
 data = load_data(n_rows)
 bar.progress(0.75)
 data = prepareData(data)
-# data = readPreparedData()
 bar.progress(0.875)
-
 
 x_test, y_test = separate_data()
 bar.progress(1.0)
 data_load_state.text("")
 bar.empty()
 
-
-
-# Модели
+# Models
 models_list = ['Multinomial Naive Bayes', 'Bernoulli Naive Bayes', 'Logistic Regression', 'Gradient Boosting']
 
 clas_models = {'Multinomial Naive Bayes': best_model,
                'Bernoulli Naive Bayes': ber_nb_model,
                'Logistic Regression': lg_model,
                'Gradient Boosting': gb_model}
-# models = init_models()
-st.subheader("Справочные материалы")
-with st.expander("ROC-кривая"):
-    st.write("""***ROC-кривая*** — график, позволяющий оценить качество бинарной классификации, отображает соотношение между долей объектов от общего количества носителей признака, верно классифицированных как несущие признак (англ. true positive rate, TPR, называемой чувствительностью алгоритма классификации), и долей объектов от общего количества объектов, не несущих признака, ошибочно классифицированных как несущие признак (англ. false positive rate).""")
-    st.write("""Количественная интерпретация ROC даёт показатель AUC (англ. Area Under Curve, площадь под кривой) — площадь, ограниченная ROC-кривой и осью доли ложных положительных классификаций. Чем выше показатель AUC, тем качественнее классификатор, при этом значение 0,5 демонстрирует непригодность выбранного метода классификации (соответствует случайному гаданию).""")
-with st.expander("Матрица ошибок (Confusion Matrix) и метрики"):
-    st.write("""***Истинно позитивное предсказание (True Positive, сокр. TP)***\n
-Вы предсказали положительный результат, и результат действительно положительный.""")
-    st.write("""***Истинно отрицательное предсказание (True Negative, TN)***\n
-Вы предсказали отрицательный результат, и результат действительно отрицательный.""")
-    st.write("""***Ошибочно положительное предсказание (False Positive, FN)***\n
-Вы предсказали положительный результат, но на самом деле это не так.""")
-    st.write("""***Ошибочно отрицательное предсказание (False Negative, FN)***\n
-Вы предсказали отрицательный результат, но на самом деле это не так.""")
+
+st.subheader("Reference Materials")
+with st.expander("ROC Curve"):
+    st.write("""***ROC Curve***: A graph used to assess the quality of binary classification. It shows the relationship between the proportion of true positives (sensitivity) and the proportion of false positives. Quantitative interpretation of the ROC curve provides the AUC (Area Under Curve) score, which is the area under the curve. A higher AUC indicates a better classifier, with a value of 0.5 indicating random guessing.""")
+with st.expander("Confusion Matrix and Metrics"):
+    st.write("""***True Positive (TP)***: You predicted a positive result, and the result is actually positive.\n
+    ***True Negative (TN)***: You predicted a negative result, and the result is actually negative.\n
+    ***False Positive (FP)***: You predicted a positive result, but it's not.\n
+    ***False Negative (FN)***: You predicted a negative result, but it's not.""")
     st.image("Confusion matrix.png")
     st.markdown(r'''Accuracy = $$ \frac{TP+TN}{TP+FP+FN+TN}$$''')
     st.markdown(r'''Precision = $$ \frac{TP}{TP+FP}$$''')
     st.markdown(r'''Recall = $$ \frac{TP}{TP+FN}$$''')
     st.markdown(r'''F1 score = $$ 2\frac{Recall * Precision}{Recall + Precision}$$''')
 
-
 graphCol, predictCol = st.columns([3, 1])
-graphCol.subheader('Оценка качества моделей')
-models_select = graphCol.multiselect('Выберите модели', models_list)
-
-
+graphCol.subheader('Model Evaluation')
+models_select = graphCol.multiselect('Select models', models_list)
 
 print_models(models_select, x_test, y_test)
 
-predictCol.subheader("Классификация отзывов")
-radioButton = predictCol.radio("Выберите модель", models_list, 0)
-txt = predictCol.text_area(label = "Отзыв для классификации", key="text", height=300)
-predictCol.button("Очистить", on_click=clear_text)
-if predictCol.button("Классифицировать"):
+predictCol.subheader("Movie Review Classification")
+radioButton = predictCol.radio("Select a model", models_list, 0)
+txt = predictCol.text_area(label="Review for classification", key="text", height=300)
+predictCol.button("Clear", on_click=clear_text)
+if predictCol.button("Classify"):
     if len(txt) != 0:
         review = convertStringToDataFrame(txt)
         data_text = prepareData(review)
         data_text = tfidf_vect.transform(data_text['lemmatized'].values)
         result = clas_models[radioButton].predict(data_text)
         if result[0] == 1:
-            predictCol.success("Положительный отзыв")
+            predictCol.success("Positive review")
         else:
-            predictCol.error("Отрицательный отзыв")
+            predictCol.error("Negative review")
     else:
-        predictCol.error("Введите отзыв")
+        predictCol.error("Enter a review")
+
 
 
 
